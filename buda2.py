@@ -16,6 +16,7 @@ class Buda:
     def __init__(self, api_key, secret_key, df_buda_path=None):
         self.api_key = api_key
         self.secret_key = secret_key
+
         if df_buda_path:
             self.df_buda = pd.read_excel(df_buda_path)
             self.df_buda.set_index("Unnamed: 0",inplace=True)
@@ -34,6 +35,17 @@ class Buda:
 
         return str(int(datetime.timestamp() * 1000))
     
+    def get_trades_realtime(self, market_id):
+        if self.df_buda.empty:
+            raise Exception("An excel path is needed")
+        while True:
+            try:
+                self.get_trades(market_id)
+                time.sleep(60)
+            except:
+                pass
+
+
     def get_trades(self, market_id, startTime="", stopTime="" ):
         
         #check startTime is newer than stopTime
@@ -80,6 +92,7 @@ class Buda:
             if stopTime >= self.df_buda.index[-1]:
                 print(f'{stopTime} >= {self.df_buda.index[-1]}')     
                 break
+            
         
         self.df_buda = self.df_buda.sort_index()
         self.df_buda.drop_duplicates(subset=None, keep='first', inplace=True, ignore_index=False)
@@ -89,5 +102,5 @@ class Buda:
 budaAPI = Buda(api_key, secret_key, 'prices_buda.xlsx')
 startTime = dt.datetime(2021,5,2)
 stopTime = dt.datetime(2021,4,20)
-budaAPI.get_trades('ETH-COP')
+budaAPI.get_trades_realtime('ETH-COP')
 

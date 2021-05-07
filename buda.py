@@ -7,15 +7,24 @@ from auth import BudaHMACAuth
 import time
 from dotenv import load_dotenv
 
+
 load_dotenv()
 api_key = os.getenv("BUDA_KEY")
 secret_key = os.getenv("BUDA_SECRET")
 
 class Buda:
-    def __init__(self, api_key, secret_key):
+    def __init__(self, api_key, secret_key, df_buda_path=None):
         self.api_key = api_key
         self.secret_key = secret_key
-        self.df_buda = pd.DataFrame(columns=['timestamp', 'amount', 'price', 'direction','idk'])
+
+        if df_buda_path:
+            self.df_buda = pd.read_excel(df_buda_path)
+            self.df_buda.set_index("Unnamed: 0",inplace=True)
+            self.df_buda.index = pd.to_datetime(self.df_buda.index)
+            
+        else:
+            self.df_buda = pd.DataFrame(columns=['timestamp', 'amount', 'price', 'direction','idk'])
+        self.buda_path = df_buda_path
 
         #self.startTime = self.datetime_to_unix(dt.datetime.now())
     
@@ -26,10 +35,43 @@ class Buda:
 
         return str(int(datetime.timestamp() * 1000))
     
-    def get_trades(self, market_id, startTime, stopTime):
+    def get_trades_realtime(self, market_id):
+        if self.df_buda.empty:
+            raise Exception("An excel path is needed")
+
+        while True:
+            try:
+                self.get_trades(market_id)
+                time.sleep(60)
+            except:
+                pass
+
+
+    def get_trades(self, market_id, startTime="", stopTime="" ):
         
-        startTimeUnix = self.datetime_to_unix(startTime)
-        stopTimeUnix = self.datetime_to_unix(stopTime)
+        #check startTime is newer than stopTime
+        if startTime and stopTime and startTime < stopTime:
+            raise Exception("StartTime must be a newer date than stopTime")
+
+        #check for excel path or for stop time
+        if self.df_buda.empty and (not stopTime):
+            raise Exception("Must provide an excel path or an stop time")
+
+        
+        if self.df_buda.empty:
+            startTimeUnix = self.datetime_to_unix(startTime)
+        else:
+            stopTime = self.df_buda.index[-1]
+            print(stopTime)
+            if startTime:
+                startTimeUnix = self.datetime_to_unix(startTime)
+            else:
+                startTime = dt.datetime.now()
+                startTimeUnix = self.datetime_to_unix(startTime)
+
+        if stopTime >= startTime:
+            raise Exception("StartTime must be a newer date than stopTime")
+
 
         req_params = {'timestamp' : startTimeUnix, 'limit':100}
         url = f'https://www.buda.com/api/v2/markets/{market_id}/trades'
@@ -58,10 +100,9 @@ class Buda:
         self.df_buda.to_excel('prices_buda.xlsx',index=True)
         return self.df_buda
 
-        
-
-budaAPI = Buda(api_key, secret_key)
-starTime = dt.datetime(2021,5,2)
+budaAPI = Buda(api_key, secret_key, 'prices_buda.xlsx')
+startTime = dt.datetime(2021,5,2)
 stopTime = dt.datetime(2021,4,20)
-budaAPI.get_trades('ETH-COP', dt.datetime(2021,5,2), dt.datetime(2021,4,20))
+budaAPI.get_trades_realtime('ETH-COP')
+
 
