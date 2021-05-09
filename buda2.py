@@ -36,7 +36,7 @@ class Buda:
         
         self.buda_path = df_buda_path
 
-        #self.startTime = self.datetime_to_unix(dt.datetime.now())
+        #self.to_date = self.datetime_to_unix(dt.datetime.now())
     
     def datetime_to_unix(self, datetime):
         '''
@@ -61,23 +61,23 @@ class Buda:
                 pass
 
 
-    def get_trades(self,market_id, startTimeUnix):
+    def get_trades(self,market_id, date_unix):
         """
-        Obtains last 1000 trades starting at StartTimeUnix
+        Obtains last 1000 trades starting at to_dateUnix
         
         Parameter:
-        market_id (str): trading symbol
-        startTimeUnix (int): start time
+        market_id (str): trading symbol as listed in buda website
+        date_unix (int): start time in unix format
         """
 
-        req_params = {'timestamp' : startTimeUnix, 'limit':100}
+        req_params = {'timestamp' : date_unix, 'limit':100}
         url = f'https://www.buda.com/api/v2/markets/{market_id}/trades'
 
         r = requests.get(url, params = req_params, auth=BudaHMACAuth(api_key, secret_key))
 
         if r.status_code != 200:
             print(f"Error {r.status_code}\nTrying again ")
-            self.get_trades_1(market_id, startTimeUnix)
+            self.get_trades_1(market_id, date_unix)
 
         response = r.json()
         if response:
@@ -91,7 +91,7 @@ class Buda:
         else:
             raise Exception('No trades found')
 
-    def get_trades_historic(self, market_id, startTime="", stopTime="" ):
+    def get_trades_historic(self, market_id, from_date="", to_date="" ):
         '''
         Obtains trades between two dates. 
 
@@ -100,30 +100,30 @@ class Buda:
 
         Parameters:
         symbol (str): mandatory. 
-        startTime (datetime): optional.
+        to_date (datetime): optional.
         stopDate (datetime): optional. 
         
         '''
 
-        if self.df_buda.empty and (not startTime or not stopTime):
-            raise Exception("Must provide an excel path or a StartTime StopTime combination")
+        if self.df_buda.empty and (not to_date or not from_date):
+            raise Exception("Must provide an excel path or a to_date from_date combination")
         
-        if startTime:
-            startTimeUnix = self.datetime_to_unix(startTime)
+        if to_date:
+            to_date_unix = self.datetime_to_unix(to_date)
         else:
-            startTime = dt.datetime.now()
-            startTimeUnix = self.datetime_to_unix(startTime)
+            to_date = dt.datetime.now()
+            to_date_unix = self.datetime_to_unix(to_date)
 
         if not self.df_buda.empty:
-            stopTime = self.df_buda.index[-1]
-            print(f'stopTime {stopTime}')
+            from_date = self.df_buda.index[-1]
+            print(f'from_date {from_date}')
 
-        if stopTime >= startTime:
-            raise Exception("StartTime must be a newer date than stopTime")
+        if from_date >= to_date:
+            raise Exception("to_date must be a newer date than from_date")
             
 
         while True:
-            data = self.get_trades(market_id, startTimeUnix)
+            data = self.get_trades(market_id, to_date_unix)
             df2 = pd.DataFrame(data, columns=['timestamp', 'amount', 'price', 'direction','idk'])
             df2.timestamp = df2.timestamp.astype("float")
             df2.amount = df2.amount.astype("float")
@@ -132,11 +132,11 @@ class Buda:
             df2.index = [dt.datetime.fromtimestamp(x / 1000.0) for x in df2.timestamp]
 
             self.df_buda = self.df_buda.append(df2)
-            startTimeUnix = self.df_buda.timestamp.iloc[-1]
-            startTime = self.df_buda.index[-1]
-
-            if stopTime >= self.df_buda.index[-1]:
-                print(f'{stopTime} >= {self.df_buda.index[-1]}')     
+            to_date_unix = self.df_buda.timestamp.iloc[-1]
+            to_date = self.df_buda.index[-1]
+            
+            if self.df_buda.index[-1] <= from_date:
+                print(f'{from_date} >= {self.df_buda.index[-1]}')     
                 break
             
         
@@ -147,13 +147,14 @@ class Buda:
         self.df_buda.to_excel('preciosb.xlsx',index=True)
         return self.df_buda
 
-budaAPI = Buda(api_key, secret_key,'preciosb.xlsx')
-startTime = dt.datetime(2021,5,7)
-stopTime = dt.datetime(2021,5,6)
-startTimeUnix = budaAPI.datetime_to_unix(startTime)
+budaAPI = Buda(api_key, secret_key)
+from_date = dt.datetime(2021,5,1)
+to_date = dt.datetime(2021,5,3)
+to_dateUnix = budaAPI.datetime_to_unix(to_date)
 #budaAPI.get_trades_realtime('ETH-COP')
-#budaAPI.get_trades_historic('ETH-COP', startTime, stopTime)
-budaAPI.get_trades_historic('ETH-COP')
-#budaAPI.get_trades('ETH-COP', startTimeUnix)
+#budaAPI.get_trades_historic('ETH-COP', to_date, from_date)
+budaAPI.get_trades_historic('ETH-COP',from_date, to_date)
+#budaAPI.get_trades('ETH-COP', to_dateUnix)
 
-
+# StopDate = from_date
+# startDate = to_date
