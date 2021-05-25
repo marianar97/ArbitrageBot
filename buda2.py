@@ -62,15 +62,20 @@ class Buda:
             print("Error while connecting to MySQL", e)
 
     def insert_dataframe(self, dataframe, database):
-        if database == 'BudaTrade':
-            print('here')
             #list of columns in dataframe
             cols = ",".join([str(i) for i in dataframe.columns.tolist()])
 
             #Insert DataFrame records one by one
             for i,row in dataframe.iterrows():
-                row = list(map(str, row))
-                query = "INSERT INTO BudaTrade ("+ cols + ") VALUES ('" +  "','".join(row) + "')"
+                if database == 'BudaTrade':
+                    row = list(map(str, row))
+                    query = "INSERT INTO BudaTrade ("+ cols + ") VALUES ('" +  "','".join(row) + "')"
+                
+                elif database=='BudaOrderBook':
+                    cols = ",".join([str(i) for i in dataframe.columns.tolist()])
+                    for i,row in dataframe.iterrows():
+                        row = list(map(str, row))
+                        query = "INSERT INTO BudaOrderBook ("+ cols + ") VALUES ('" +  "','".join(row) + "')"
                 
                 while True:
                     try:
@@ -85,29 +90,6 @@ class Buda:
                     except Error as e:
                         print(f"Error {e}\nTrying again...")
                         time.sleep(60)
-
-        elif database=='BudaOrderBook':
-            print('enters')
-            cols = ",".join([str(i) for i in dataframe.columns.tolist()])
-            for i,row in dataframe.iterrows():
-                row = list(map(str, row))
-                query = "INSERT INTO BudaOrderBook ("+ cols + ") VALUES ('" +  "','".join(row) + "')"
-                
-                while True:
-                    try:
-                        connection = mysql.connector.connect(**self.connection_config_dict)
-
-                        if connection.is_connected():
-                            cursor = connection.cursor()
-                            cursor.execute(query)
-                            connection.commit()
-                            break
-                        print('here')
-                    except Error as e:
-                        print(f"Error {e}\nTrying again...")
-                        time.sleep(60)
-
-
 
     def datetime_to_unix(self, datetime):
         '''
@@ -208,7 +190,6 @@ class Buda:
 
         if not self.df_buda.empty:
             from_date = self.df_buda.index[-1]
-            print(f'from_date {from_date}')
 
         if from_date >= to_date:
             raise Exception("to_date must be a newer date than from_date")
@@ -226,7 +207,6 @@ class Buda:
             self.df_buda = self.df_buda.append(df2)
             to_date_unix = self.df_buda.timestamp.iloc[-1]
             to_date = self.df_buda.index[-1]
-            print(f'to_date: {to_date} from_date: {from_date}')
             if to_date <= from_date:
 
                 print(f'{from_date} >= {self.df_buda.index[-1]}')     
@@ -269,9 +249,7 @@ class Buda:
                 request = json.loads(r.text)
                 ask = request['order_book']['asks'][0:5]
                 bids = request['order_book']['bids'][0:5]
-                print('asks', len(ask), '\nbids',bids)
                 cols = {}
-                #print(request)
                 for i in range(len(ask)):
                     cols['ask'+str(i+1)+'Price'] = ask[i][0]
                     cols['ask'+str(i+1)+'Amount'] = ask[i][1]
@@ -292,15 +270,5 @@ from_date = dt.datetime(2021,5,1)
 to_date = dt.datetime(2021,5,16)
 to_dateUnix = budaAPI.datetime_to_unix(to_date)
 #budaAPI.get_trades_realtime('ETH-COP')
-#budaAPI.get_trades_historic('ETH-COP')
-#budaAPI.get_trades_realtime('ETH-COP')
 #budaAPI.get_trades_historic('BTC-COP',from_date, to_date)
-#budaAPI.get_trades('ETH-COP', to_dateUnix)
-#budaAPI.get_tikers('ETH-COP')
-#df = pd.read_excel('preciosBTCBuda.xlsx')
-#print(df)
-#budaAPI.insert_dataframe(df)
-# StopDate = from_date
-# startDate = to_date
-#budaAPI.get_trades_realtime('ETH-COP')
 budaAPI.get_tikers('ETH-COP')
