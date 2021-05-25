@@ -6,12 +6,11 @@ import pandas as pd
 import calendar
 from datetime import datetime, timedelta
 
+#cada 15 segundos
+
 class Binance:
-    def __init__(self, df_path=""):
-        if df_path:
-            self.df= pd.read_excel(df_path)
-        else:
-            self.df = pd.DataFrame(columns=['a', 'p', 'q', 'f', 'l', 'T', 'm', 'M'])
+    def __init__(self):
+        self.df = pd.DataFrame(columns=['a', 'p', 'q', 'f', 'l', 'T', 'm', 'M'])
 
     def get_unix_ms_from_date(self, date):
         return int(time.mktime(date.timetuple())*1e3 + date.microsecond/1e3)
@@ -91,7 +90,21 @@ class Binance:
 
         print('file created!')
 
+    def fetch_candlestick(self, symbol, interval, from_date, to_date):
+        url = 'https://api.binance.com/api/v3/klines'
 
+        from_date = self.get_unix_ms_from_date(from_date)
+        to_date = self.get_unix_ms_from_date(to_date)
+
+        params = {
+        'symbol': symbol,
+        'interval': interval,
+        'startTime':from_date,
+        'endTime':to_date
+        }
+        
+        response = requests.get(url, params=params)
+        print(response.json())
 
 
 
@@ -100,11 +113,12 @@ class Binance:
 
 b = Binance()
 start_date = datetime(2021,5,7,0,35)
-end_date = datetime(2021,5,7,0,45)
+end_date = datetime(2021,5,8,0,0)
 #res = b.get_first_id('ETHUSDT', start_date)
 #print(res)
 #b.get_historical_trades('ETHUSDT', start_date, end_date)
 #b.get_first_id('ETHUSDT', start_date)
 #ms = b.get_unix_ms_from_date(start_date) 
 #d = b.get_datetime_from_unix_ms(ms)     
-b.fetch_binance_trades('ETHUSDT', start_date, end_date)
+#b.fetch_binance_trades('ETHUSDT', start_date, end_date)
+b.fetch_candlestick('ETHUSDT', '1m',start_date, end_date)
