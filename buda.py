@@ -27,9 +27,7 @@ class Buda:
         secret_key: personal buda secret key
     """
 
-    def __init__(self, api_key, secret_key):
-        self.api_key = api_key
-        self.secret_key = secret_key
+    def __init__(self):
         
         self.df_buda = pd.DataFrame(columns=['timestamp', 'amount', 'price', 'direction','ex_id'])
                 
@@ -147,7 +145,7 @@ class Buda:
         req_params = {'timestamp' : date_unix, 'limit':100}
         url = f'https://www.buda.com/api/v2/markets/{market_id}/trades'
 
-        r = requests.get(url, params = req_params, auth=BudaHMACAuth(api_key, secret_key))
+        r = requests.get(url, params = req_params)
 
         if r.status_code != 200:
             print(f"Error {r.status_code}\nTrying again ")
@@ -155,7 +153,7 @@ class Buda:
             
         response = r.json()
         if response:
-            request = json.loads(requests.get(url, params = req_params,auth=BudaHMACAuth(api_key, secret_key)).text)
+            request = json.loads(requests.get(url, params = req_params).text)
             data = request['trades']['entries']
             return data
             #df2 = pd.DataFrame(data, columns=['timestamp', 'amount', 'price', 'direction','ex_id'])
@@ -238,7 +236,7 @@ class Buda:
         while True:
             datet = dt.datetime.now()
             timestamp = self.datetime_to_unix(datet)
-            r = requests.get(url, auth=BudaHMACAuth(api_key, secret_key))
+            r = requests.get(url)
 
             if r.status_code != 200:
                 print(f"Error {r.status_code}\nTrying again ")
@@ -265,7 +263,7 @@ class Buda:
                 raise Exception('No trades found')
 
 
-budaAPI = Buda(api_key, secret_key)
+budaAPI = Buda()
 from_date = dt.datetime(2021,5,1)
 to_date = dt.datetime(2021,5,16)
 to_dateUnix = budaAPI.datetime_to_unix(to_date)
