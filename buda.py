@@ -262,7 +262,6 @@ class Buda:
             else:
                 raise Exception('No trades found')
 
-
 budaAPI = Buda()
 from_date = dt.datetime(2021,5,1)
 to_date = dt.datetime(2021,5,16)
