@@ -148,7 +148,7 @@ class Buda:
         r = requests.get(url, params = req_params)
 
         if r.status_code != 200:
-            print(f"Error {r.status_code}\nTrying again ")
+            print(f"Error3 {r.status_code}\nTrying again ")
             self.get_trades_1(market_id, date_unix)
             
         response = r.json()
@@ -239,7 +239,7 @@ class Buda:
             r = requests.get(url)
 
             if r.status_code != 200:
-                print(f"Error {r.status_code}\nTrying again ")
+                print(f"Error4 {r.status_code}\nTrying again ")
                 self.get_tikers(market_id)
                 
             response = r.json()
