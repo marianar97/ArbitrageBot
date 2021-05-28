@@ -237,7 +237,8 @@ class Buda:
             datet = dt.datetime.now()
             timestamp = self.datetime_to_unix(datet)
             r = requests.get(url)
-
+            print(r)
+            print(r.text)
             if r.status_code != 200:
                 print(f"Error4 {r.status_code}\nTrying again ")
                 self.get_tikers(market_id)
