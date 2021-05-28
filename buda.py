@@ -86,7 +86,7 @@ class Buda:
                             break
 
                     except Error as e:
-                        print(f"Error {e}\nTrying again...")
+                        print(f"Error1 {e}\nTrying again...")
                         time.sleep(60)
 
     def datetime_to_unix(self, datetime):
@@ -130,7 +130,7 @@ class Buda:
                     time.sleep(20)
 
             except Error as e:
-                print(f"Error {e}\nTrying again...")
+                print(f"Error2 {e}\nTrying again...")
                 time.sleep(60)
 
     def get_trades(self,market_id, date_unix):
