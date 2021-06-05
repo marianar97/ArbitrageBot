@@ -126,18 +126,29 @@ class Binance:
         response = requests.get(url, params=params)
         return response.json()
 
-    def get_candlestick_realtime(self, symbol, interval, from_date):
+    def get_candlestick_realtime(self, symbol, interval):
         while True:
-            current_time = datetime.now()
-            data =self.fetch_candlestick(symbol, interval, from_date, current_time)
-            time.sleep(60)
+            try:
+                connection = mysql.connector.connect(**self.connection_config_dict)
+                query = "SELECT * FROM BinanceKnlines ORDER BY klinesId DESC LIMIT 1"
+                if connection.is_connected():
+                    cursor = connection.cursor()
+                    cursor.execute(query)
+                    for row in cursor:
+                        from_date = row[6]
+                        
+                    current_time = datetime.now()
+                    data =self.fetch_candlestick(symbol, interval, from_date, current_time)
+                    time.sleep(60)
+                    df = pd.DataFrame(data, columns=['openTime', 'open', 'high', 'low', 'close', 'volume', 'closeTime', 'quoteAssetVolume', 'numberTrades', 'takerBuyBaseAssetVol','takerBuyQuoteVol', 'ignore' ])
+                    df['openDateTime']= [self.get_datetime_from_unix_ms(x) for x in df.openTime]
+                    df['closeDateTime']= [self.get_datetime_from_unix_ms(x) for x in df.closeTime]
+                    df.drop(['ignore'], axis=1, inplace=True)
+                    self.insert_dataframe(df, 'BinanceKnlines')
 
-            df = pd.DataFrame(data, columns=['openTime', 'open', 'high', 'low', 'close', 'volume', 'closeTime', 'quoteAssetVolume', 'numberTrades', 'takerBuyBaseAssetVol','takerBuyQuoteVol', 'ignore' ])
-            df['openDateTime']= [self.get_datetime_from_unix_ms(x) for x in df.openTime]
-            df['closeDateTime']= [self.get_datetime_from_unix_ms(x) for x in df.closeTime]
-            df.drop(['ignore'], axis=1, inplace=True)
-            self.insert_dataframe(df, 'BinanceKnlines')
-            
+            except Error as e:
+                print(f"Error2 {e}\nTrying again...")
+                time.sleep(60)
     
     def insert_dataframe(self, dataframe, database):
         #list of columns in dataframe
@@ -175,4 +186,4 @@ end_date = datetime(2021,5,8,0,1)
 #d = b.get_datetime_from_unix_ms(ms)     
 #b.fetch_binance_trades('ETHUSDT', start_date, end_date)
 #b.fetch_candlestick('ETHUSDT', '1m',start_date, end_date)
-b.get_candlestick_realtime('ETHUSDT','1m',start_date)
+b.get_candlestick_realtime('ETHUSDT','1m')
