@@ -157,7 +157,7 @@ class Binance:
                         cursor = connection.cursor()
                         cursor.execute(query)
                         connection.commit()
-                        break
+                        
 
                 except Error as e:
                     print(f"Error1 {e}\nTrying again...")
