@@ -145,7 +145,7 @@ class Buda:
         req_params = {'timestamp' : date_unix, 'limit':100}
         url = f'https://www.buda.com/api/v2/markets/{market_id}/trades'
 
-        r = requests.get(url, params = req_params)
+        r = requests.get(url, params = req_params, auth=BudaHMACAuth(api_key, secret_key))
 
         if r.status_code != 200:
             print(f"Error3 {r.status_code}\nTrying again ")
@@ -153,7 +153,7 @@ class Buda:
             
         response = r.json()
         if response:
-            request = json.loads(requests.get(url, params = req_params).text)
+            request = json.loads(requests.get(url, params = req_params,auth=BudaHMACAuth(api_key, secret_key)).text)            
             data = request['trades']['entries']
             return data
             #df2 = pd.DataFrame(data, columns=['timestamp', 'amount', 'price', 'direction','ex_id'])
@@ -232,11 +232,12 @@ class Buda:
         """
 
         url = f'https://www.buda.com/api/v2/markets/{market_id}/order_book'
-
+        print(url)
+        
         while True:
             datet = dt.datetime.now()
             timestamp = self.datetime_to_unix(datet)
-            r = requests.get(url)
+            r = requests.get(url, auth=BudaHMACAuth(api_key, secret_key))
             print(r)
             print(r.text)
             if r.status_code != 200:
