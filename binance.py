@@ -13,9 +13,9 @@ from dotenv import load_dotenv
 #cada 15 segundos
 load_dotenv()
 
-username = "root"
-password = "arbitrage2021"
-server = "34.134.137.115"
+username = os.environ['user']
+password = os.environ['password']
+server = os.environ['server']
 
 print(username, password, server)
 
